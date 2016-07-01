@@ -23,10 +23,11 @@
  * please contact with::[contacto@tid.es]
  */
 
-var config = require('../config'),
-    lwm2mServer = require('../').server,
+var config = require('lwm2m-node-lib/config'),
+    lwm2mServer = require('lwm2m-node-lib').server,
     async = require('async'),
     clUtils = require('command-node'),
+    fs = require('fs'),
     globalServerInfo,
     separator = '\n\n\t';
 
@@ -116,6 +117,22 @@ function write(commands) {
     }
 }
 
+function upload(commands) {
+    fs.readFile(commands[1], 'utf8', function(err, data){
+        if(err)
+            console.log(err);
+        else{
+            lwm2mServer.write(
+                commands[0],
+                5,
+                0,
+                0,
+                data,
+                handleResult('File upload successfully')); 
+        }
+    })
+}
+
 function execute(commands) {
     var obj = parseResourceId(commands[1], false);
 
@@ -125,7 +142,7 @@ function execute(commands) {
             obj.objectType,
             obj.objectId,
             obj.resourceId,
-            commands[2],
+            null,
             handleResult('Command executed successfully'));
     } else {
         console.log('\nCouldn\'t parse resource URI: ' + commands[1]);
@@ -333,8 +350,14 @@ var commands = {
             'device.',
         handler: testRunning(write)
     },
+    'upload': {
+        parameters: ['deviceId', 'filePath'],
+        description: '\tUploads the file from given filePath to' +
+            'device.',
+        handler: testRunning(upload)        
+    },
     'execute': {
-        parameters: ['deviceId', 'resourceId', 'executionArguments'],
+        parameters: ['deviceId', 'resourceId'],
         description: '\tExecutes the selected resource with the given arguments.',
         handler: testRunning(execute)
     },
